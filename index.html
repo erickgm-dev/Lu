@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Para Lupita ❤️</title>
+
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#240b36;
+      --pink:#ff4d6d;
+      --white:rgba(255,255,255,.92);
+      --glass:rgba(255,255,255,.10);
+      --glass2:rgba(255,255,255,.16);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; margin: 0; }
+
+    body{
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui;
+      color: var(--white);
+      overflow: hidden;
+      background:
+        radial-gradient(1200px 800px at 20% 15%, rgba(255,77,109,.25), transparent 60%),
+        radial-gradient(900px 700px at 85% 30%, rgba(255,143,171,.20), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+    }
+
+    #fx{
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none; /* ✅ canvas no roba toques (iPhone) */
+    }
+
+    .ui{
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      z-index: 2;
+    }
+
+    .card{
+      width: min(560px, 92vw);
+      border-radius: 26px;
+      background: linear-gradient(180deg, var(--glass2), var(--glass));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      backdrop-filter: blur(14px);
+      padding: 24px 18px 20px;
+      text-align: center;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .name{
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: .3px;
+    }
+
+    .heartWrap{
+      display:grid;
+      place-items:center;
+      height: 170px;
+      margin: 6px 0 6px;
+    }
+
+    .heart{
+      width: 86px;
+      height: 86px;
+      transform: rotate(45deg);
+      background: linear-gradient(135deg, var(--pink), #ff2f55);
+      position: relative;
+      border-radius: 18px;
+      box-shadow: 0 10px 40px rgba(255,77,109,.35);
+      animation: idleBeat 1.8s ease-in-out infinite;
+      touch-action: manipulation;
+    }
+
+    .heart::before,
+    .heart::after{
+      content:"";
+      position:absolute;
+      width: 86px;
+      height: 86px;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .heart::before{ top:-43px; left:0; }
+    .heart::after{ left:-43px; top:0; }
+
+    @keyframes idleBeat{
+      0%,100%{ transform: rotate(45deg) scale(1); }
+      50%{ transform: rotate(45deg) scale(1.08); }
+    }
+
+    .phrase{
+      min-height: 80px;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin: 14px 0 10px;
+    }
+
+    .cursor{
+      display:inline-block;
+      width: 10px;
+      height: 22px;
+      background: rgba(255,255,255,.8);
+      margin-left: 6px;
+      border-radius: 4px;
+      animation: blink 1s steps(2,end) infinite;
+      vertical-align: -3px;
+    }
+    @keyframes blink{ 50%{ opacity:0; } }
+
+    .hint{
+      font-size: 12px;
+      opacity: .65;
+      letter-spacing: .2px;
+      margin-top: 10px;
+    }
+
+    .btnRow{
+      display:flex;
+      gap: 10px;
+      justify-content:center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    button{
+      border: none;
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, var(--pink), #ff2f55);
+      box-shadow: 0 10px 25px rgba(255,77,109,.3);
+      touch-action: manipulation;
+    }
+    button:active{ transform: scale(.97); }
+
+    /* ===== Modal juego ===== */
+    .modal{
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+    }
+    .modal.open{ display:grid; }
+
+    .gameCard{
+      width: min(520px, 94vw);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 18px 60px rgba(0,0,0,.50);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .gameTop{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .gameTitle{
+      font-weight: 900;
+      letter-spacing: .2px;
+      text-align:left;
+    }
+    .closeBtn{
+      background: rgba(255,255,255,.14);
+      box-shadow: none;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 900;
+    }
+
+    .board{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 12px auto 10px;
+      width: min(360px, 90vw);
+    }
+    .cell{
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      display:grid;
+      place-items:center;
+      font-size: 24px;
+    }
+
+    .status{
+      font-size: 14px;
+      opacity: .9;
+      margin: 10px 0 8px;
+      min-height: 18px;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 56px 56px 56px;
+      grid-template-rows: 56px 56px 56px;
+      gap: 8px;
+      justify-content:center;
+      margin: 10px 0 6px;
+      touch-action: manipulation;
+    }
+    .ctrl{
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.18);
+      color: white;
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 18px;
+      box-shadow: none;
+      padding: 0;
+      display:grid;
+      place-items:center;
+    }
+    .ctrl:active{ transform: scale(.97); }
+
+    .gameBottom{
+      display:flex;
+      justify-content:center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .ghostBtn{
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: none;
+    }
+  </style>
+</head>
+
+<body>
+<canvas id="fx"></canvas>
+
+<div class="ui">
+  <div class="card" id="card">
+    <div class="name">Lupita ❤️</div>
+
+    <div class="heartWrap">
+      <div class="heart" id="heart" aria-label="Corazón"></div>
+    </div>
+
+    <div class="phrase" id="phrase">
+      Esto es para ti, mi amor<span class="cursor"></span>
+    </div>
+
+    <div class="btnRow">
+      <button id="openGame">Jugar Gato & Ratón 😼🐭</button>
+    </div>
+
+    <div class="hint">✨ Cambiando solito…</div>
+  </div>
+</div>
+
+<!-- Modal del juego -->
+<div class="modal" id="modal">
+  <div class="gameCard">
+    <div class="gameTop">
+      <div class="gameTitle">
+        Gato & Ratón<br>
+        <span style="font-size:12px;opacity:.75;font-weight:700;">
+          Tú eres 🐭 • Erick es 😼 • Meta: llegar a 🧀
+        </span>
+      </div>
+      <button class="closeBtn" id="closeGame">✕</button>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="status" id="status"></div>
+
+    <div class="controls">
+      <div></div>
+      <button class="ctrl" id="up">⬆️</button>
+      <div></div>
+
+      <button class="ctrl" id="left">⬅️</button>
+      <button class="ctrl" id="wait">⏳</button>
+      <button class="ctrl" id="right">➡️</button>
+
+      <div></div>
+      <button class="ctrl" id="down">⬇️</button>
+      <div></div>
+    </div>
+
+    <div class="gameBottom">
+      <button class="ghostBtn" id="restart">Reiniciar 🔁</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ====== ROMÁNTICO (auto frases + partículas)
+  const canvas = document.getElementById("fx");
+  const ctx = canvas.getContext("2d");
+  const phraseEl = document.getElementById("phrase");
+  const heartEl = document.getElementById("heart");
+  const cardEl  = document.getElementById("card");
+
+  const frases = [
+    "Lupita, mi cielo, eres lo mejor que me ha pasado ❤️",
+    "Gordis… perdón por los malos momentos 😔",
+    "Corazón, nunca fue mi intención lastimarte",
+    "Te pido perdón con todo mi corazón, mi amor",
+    "A pesar de todo, te amo más de lo que imaginas 💖",
+    "Siempre te voy a amar, Lupita ✨"
+  ];
+
+  let i = 0;
+  let typingTimer = null;
+
+  function resize(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(innerWidth * dpr);
+    canvas.height = Math.floor(innerHeight * dpr);
+    canvas.style.width = innerWidth + "px";
+    canvas.style.height = innerHeight + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  addEventListener("resize", resize);
+
+  function typeText(text){
+    if (typingTimer) clearInterval(typingTimer);
+    phraseEl.innerHTML = "";
+    const cursor = document.createElement("span");
+    cursor.className = "cursor";
+    phraseEl.appendChild(cursor);
+
+    let n = 0;
+    typingTimer = setInterval(() => {
+      cursor.insertAdjacentText("beforebegin", text[n] || "");
+      n++;
+      if(n > text.length){
+        clearInterval(typingTimer);
+        typingTimer = null;
+      }
+    }, 18);
+  }
+
+  const particles = [];
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+
+  function spawnHearts(x, y, count = 20){
+    for(let k=0;k<count;k++){
+      particles.push({
+        x: x + rand(-12, 12),
+        y: y + rand(-12, 12),
+        vx: rand(-1.2, 1.2),
+        vy: rand(-3.2, -1.1),
+        s: rand(7, 14),
+        rot: rand(-0.8, 0.8),
+        vr: rand(-0.08, 0.08),
+        life: rand(45, 95),
+        a: 1
+      });
+    }
+  }
+
+  function drawHeart(x, y, size, rot, alpha){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.globalAlpha = alpha;
+
+    ctx.beginPath();
+    const s = size;
+    ctx.moveTo(0, s * 0.25);
+    ctx.bezierCurveTo(0, -s * 0.45, -s * 0.95, -s * 0.15, -s * 0.55, s * 0.35);
+    ctx.bezierCurveTo(-s * 0.15, s * 0.85, 0, s * 0.95, 0, s * 1.05);
+    ctx.bezierCurveTo(0, s * 0.95, s * 0.15, s * 0.85, s * 0.55, s * 0.35);
+    ctx.bezierCurveTo(s * 0.95, -s * 0.15, 0, -s * 0.45, 0, s * 0.25);
+    ctx.closePath();
+
+    ctx.fillStyle = "rgba(255,77,109,1)";
+    ctx.fill();
+
+    ctx.globalAlpha = alpha * 0.35;
+    ctx.fillStyle = "rgba(255,255,255,1)";
+    ctx.beginPath();
+    ctx.ellipse(-s*0.18, -s*0.08, s*0.18, s*0.12, -0.6, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function animate(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+
+    for(let p = particles.length - 1; p >= 0; p--){
+      const h = particles[p];
+      h.x += h.vx;
+      h.y += h.vy;
+      h.vy += 0.05;
+      h.vx *= 0.995;
+      h.rot += h.vr;
+      h.life -= 1;
+      h.a = Math.max(0, h.life / 95);
+
+      drawHeart(h.x, h.y, h.s, h.rot, h.a);
+
+      if(h.life <= 0 || h.y > innerHeight + 40) particles.splice(p, 1);
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  function pop(){
+    heartEl.style.transform = "rotate(45deg) scale(1.2)";
+    setTimeout(()=>heartEl.style.transform="", 200);
+  }
+
+  function nextPhrase(){
+    i = (i + 1) % frases.length;
+    typeText(frases[i]);
+    pop();
+    const r = cardEl.getBoundingClientRect();
+    spawnHearts(r.left + r.width/2, r.top + r.height/2, 26);
+  }
+
+  window.addEventListener("load", () => {
+    typeText(frases[0]);
+    const r = cardEl.getBoundingClientRect();
+    spawnHearts(r.left + r.width/2, r.top + r.height/2, 30);
+    setInterval(nextPhrase, 4000);
+  }, { once:true });
+
+  // ====== JUEGO: GATO Y RATÓN (Erick AI)
+  const modal = document.getElementById("modal");
+  const openGameBtn = document.getElementById("openGame");
+  const closeGameBtn = document.getElementById("closeGame");
+  const boardEl = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+  const restartBtn = document.getElementById("restart");
+
+  const upBtn = document.getElementById("up");
+  const downBtn = document.getElementById("down");
+  const leftBtn = document.getElementById("left");
+  const rightBtn = document.getElementById("right");
+  const waitBtn = document.getElementById("wait");
+
+  const N = 5;
+
+  // piezas
+  const EMOJI_MOUSE = "🐭";
+  const EMOJI_CAT   = "😼";
+  const EMOJI_CHEESE= "🧀";
+
+  // estado
+  let mouse = { r: 4, c: 2 }; // abajo centro
+  let cat   = { r: 0, c: 2 }; // arriba centro
+  let cheese= { r: 0, c: 4 }; // arriba derecha
+  let over = false;
+
+  const erickLines = [
+    "😼 Erick: a ver… ¿a dónde crees que vas, ratoncita?",
+    "😼 Erick: te estoy cuidando… (y persiguiendo 🙃)",
+    "😼 Erick: no te me escapas.",
+    "😼 Erick: ven acá 🫣",
+    "😼 Erick: mmm… interesante movimiento.",
+    "😼 Erick: yo también sé jugar 😌"
+  ];
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  function same(a,b){ return a.r===b.r && a.c===b.c; }
+
+  function renderBoard(){
+    boardEl.innerHTML = "";
+    for(let r=0;r<N;r++){
+      for(let c=0;c<N;c++){
+        const cell = document.createElement("div");
+        cell.className = "cell";
+
+        let t = "";
+        if (r===cheese.r && c===cheese.c) t = EMOJI_CHEESE;
+        if (r===cat.r && c===cat.c) t = EMOJI_CAT;
+        if (r===mouse.r && c===mouse.c) t = EMOJI_MOUSE;
+
+        cell.textContent = t;
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  function setStatus(msg){
+    statusEl.textContent = msg || "";
+  }
+
+  function endGame(msg){
+    over = true;
+    setStatus(msg);
+  }
+
+  function checkWin(){
+    if (same(mouse, cat)) {
+      endGame("😼 Erick te atrapó. ¡Otra vez! 🔁");
+      return true;
+    }
+    if (same(mouse, cheese)) {
+      endGame("🐭 ¡Ganaste! Llegaste al 🧀 antes que Erick 😼✨");
+      return true;
+    }
+    return false;
+  }
+
+  function legalMoves(pos){
+    const moves = [];
+    const dirs = [
+      {dr:-1, dc: 0, name:"up"},
+      {dr: 1, dc: 0, name:"down"},
+      {dr: 0, dc:-1, name:"left"},
+      {dr: 0, dc: 1, name:"right"},
+      {dr: 0, dc: 0, name:"wait"},
+    ];
+    for(const d of dirs){
+      const nr = pos.r + d.dr;
+      const nc = pos.c + d.dc;
+      if(nr>=0 && nr<N && nc>=0 && nc<N){
+        moves.push({ r:nr, c:nc, name:d.name });
+      }
+    }
+    return moves;
+  }
+
+  // IA de Erick: se acerca al ratón; si el ratón está cerca del queso, intenta bloquear un poco
+  function erickMove(){
+    if (over) return;
+
+    // frase aleatoria
+    setStatus(erickLines[Math.floor(Math.random()*erickLines.length)]);
+
+    const catMoves = legalMoves(cat);
+
+    // "interés": atrapar ratón (distancia al ratón)
+    function dist(a,b){ return Math.abs(a.r-b.r) + Math.abs(a.c-b.c); }
+
+    // estrategia:
+    // - Prioridad 1: atrapar si puede
+    // - Si ratón está a <=2 del queso, intentar acercarse al queso también para bloquear ruta
+    const mouseToCheese = dist(mouse, cheese);
+    const target = (mouseToCheese <= 2) ? cheese : mouse;
+
+    let best = catMoves[0];
+    let bestScore = Infinity;
+
+    for(const m of catMoves){
+      // score principal: distancia al ratón (siempre)
+      let score = dist(m, mouse) * 10;
+
+      // extra: si ratón va por queso, acercarse al queso también
+      score += dist(m, target) * 3;
+
+      // pequeño desempate: preferir no "esperar"
+      if(m.name === "wait") score += 2;
+
+      if(score < bestScore){
+        bestScore = score;
+        best = m;
+      }
+    }
+
+    cat.r = best.r;
+    cat.c = best.c;
+
+    renderBoard();
+    checkWin();
+  }
+
+  function playerMove(dr, dc){
+    if (over) return;
+
+    mouse.r = clamp(mouse.r + dr, 0, N-1);
+    mouse.c = clamp(mouse.c + dc, 0, N-1);
+
+    renderBoard();
+    if (checkWin()) return;
+
+    // turno de Erick
+    setTimeout(erickMove, 220);
+  }
+
+  function resetGame(){
+    mouse = { r: 4, c: 2 };
+    cat   = { r: 0, c: 2 };
+    cheese= { r: 0, c: 4 };
+    over = false;
+    renderBoard();
+    setStatus("Tu turno 🐭. Llega al 🧀 antes de que Erick 😼 te atrape.");
+  }
+
+  function openGame(){
+    modal.classList.add("open");
+    resetGame();
+  }
+  function closeGame(){
+    modal.classList.remove("open");
+  }
+
+  // Eventos (iPhone-friendly)
+  function onTap(el, fn){
+    el.addEventListener("pointerdown", (e)=>{ e.preventDefault(); fn(); });
+    el.addEventListener("touchstart", (e)=>{ e.preventDefault(); fn(); }, {passive:false});
+  }
+
+  onTap(openGameBtn, openGame);
+  onTap(closeGameBtn, closeGame);
+  onTap(restartBtn, resetGame);
+
+  onTap(upBtn,    ()=>playerMove(-1, 0));
+  onTap(downBtn,  ()=>playerMove( 1, 0));
+  onTap(leftBtn,  ()=>playerMove( 0,-1));
+  onTap(rightBtn, ()=>playerMove( 0, 1));
+  onTap(waitBtn,  ()=>playerMove( 0, 0));
+
+  // Cerrar tocando fuera
+  modal.addEventListener("pointerdown", (e)=>{
+    if(e.target === modal) closeGame();
+  });
+  modal.addEventListener("touchstart", (e)=>{
+    if(e.target === modal){ e.preventDefault(); closeGame(); }
+  }, {passive:false});
+
+  // Teclas (por si se abre en compu)
+  addEventListener("keydown", (e)=>{
+    if(!modal.classList.contains("open")) return;
+    if (over && e.key !== "Enter") return;
+    if(e.key === "ArrowUp") playerMove(-1,0);
+    if(e.key === "ArrowDown") playerMove(1,0);
+    if(e.key === "ArrowLeft") playerMove(0,-1);
+    if(e.key === "ArrowRight") playerMove(0,1);
+    if(e.key === "Enter") playerMove(0,0);
+    if(e.key === "Escape") closeGame();
+  });
+})();
+</script>
+</body>
+</html>
