@@ -93,6 +93,7 @@
       background: linear-gradient(135deg, var(--pink), var(--pink2));
       box-shadow: 0 10px 25px rgba(255,77,109,.30);
       touch-action: manipulation;
+      cursor: pointer;
     }
     button:active{ transform: scale(.97); }
     .ghostBtn{
@@ -370,7 +371,8 @@
 
     <div class="heartWrap">
       <!-- Corazón con foto usando SVG clipPath -->
-      <svg class="heartFrame" viewBox="0 0 512 512" aria-label="Foto en corazón" role="img">
+      <svg class="heartFrame" viewBox="0 0 512 512" aria-label="Foto en corazón" role="img"
+           xmlns:xlink="http://www.w3.org/1999/xlink">
         <defs>
           <!-- Forma corazón -->
           <clipPath id="heartClip">
@@ -391,6 +393,7 @@
         <!-- Tu foto -->
         <image id="introPhoto"
                href="assets/nosotros.jpg"
+               xlink:href="assets/nosotros.jpg"
                x="0" y="0" width="512" height="512"
                preserveAspectRatio="xMidYMid slice"
                clip-path="url(#heartClip)"></image>
@@ -412,7 +415,7 @@
 
     <div class="tiny">
       Hola: mandame un kissito a <b>en audio/</b> te quiero :3.<br>
-      Aunque no este contigo siempre vivier en tu mente y en tu corazón.
+      Aunque no esté contigo, siempre viviré en tu mente y en tu corazón.
     </div>
   </div>
 </section>
@@ -524,20 +527,8 @@
 
 <script>
 (() => {
-  /* =========================
-     CONFIG: CAMBIA TUS FOTOS
-     =========================
-     1) Sube tus fotos al repo en una carpeta, ejemplo:
-        /assets/nosotros.jpg
-        /assets/m1.jpg ... /assets/m8.jpg
-
-     2) Cambia aquí las rutas:
-  */
   const CONFIG = {
     introPhoto: "assets/nosotros.jpg",
-
-    // Memorama: ideal 8 fotos (8 pares = 16 cartas).
-    // Si pones menos, el juego repetirá hasta completar.
     memoryPhotos: [
       "assets/m1.jpg",
       "assets/m2.jpg",
@@ -548,7 +539,8 @@
       "assets/m7.jpg",
       "assets/m8.jpg"
     ],
-
+    // ✅ CORREGIDO: comillas y comas bien
+    // Recomendación: sin acentos raros para que no se “limpien” con el regex.
     hangmanWords: [
       "ROMANCITA",
       "LUPITA",
@@ -561,11 +553,11 @@
       "JUNTOS",
       "ESTADO",
       "CAPI",
-      "CAPITO,
+      "CAPITO",
       "ELEFANTE",
       "CASCO",
       "PLUMA",
-      "MUÑECO",
+      "MUNECO",
       "VACA",
       "PERRO",
       "GATO",
@@ -573,9 +565,10 @@
     ]
   };
 
-  // aplica foto intro
+  // aplica foto intro (Safari/iPhone friendly)
   const introImg = document.getElementById("introPhoto");
   introImg.setAttribute("href", CONFIG.introPhoto);
+  introImg.setAttribute("xlink:href", CONFIG.introPhoto);
 
   /* =========================
      NAV / SCREENS
@@ -591,9 +584,20 @@
   function openModal(modal){ modal.classList.add("open"); }
   function closeModal(modal){ modal.classList.remove("open"); }
 
-  // iPhone-friendly: solo pointerdown (evita doble disparo)
+  // ✅ FIX iPhone/WhatsApp: soporta touchstart + click (sin doble ejecución)
   function onTap(el, fn){
-    el.addEventListener("pointerdown", (e)=>{ e.preventDefault(); fn(); }, {passive:false});
+    let locked = false;
+
+    const run = (e) => {
+      if (locked) return;
+      locked = true;
+      e.preventDefault();
+      fn();
+      setTimeout(() => locked = false, 350);
+    };
+
+    el.addEventListener("touchstart", run, { passive: false });
+    el.addEventListener("click", run);
   }
 
   onTap(document.getElementById("btnEnter"), ()=> showScreen("menu"));
@@ -637,14 +641,12 @@
   function fx(){
     ctx.clearRect(0,0,W,H);
 
-    // bruma suave
     const g = ctx.createRadialGradient(W*0.25, H*0.2, 10, W*0.25, H*0.2, Math.max(W,H)*0.9);
     g.addColorStop(0, "rgba(255,77,109,.10)");
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0,0,W,H);
 
-    // partículas ascendentes
     if (Math.random() < 0.85) spawnSpark();
     for(let i=sparks.length-1; i>=0; i--){
       const s = sparks[i];
@@ -658,7 +660,6 @@
       ctx.fillStyle = "rgba(255,255,255,1)";
       ctx.fill();
 
-      // mini brillo rosita
       ctx.globalAlpha = s.a * 0.45;
       ctx.beginPath();
       ctx.arc(s.x+2, s.y+2, s.r*1.6, 0, Math.PI*2);
@@ -692,9 +693,7 @@
     while(picked.length < pairsNeeded){
       picked.push(base[picked.length % base.length]);
     }
-    // duplicar para pares
     const cards = picked.concat(picked).map((src, idx)=> ({ id: idx, src, matched:false }));
-    // shuffle
     for(let i=cards.length-1;i>0;i--){
       const j = Math.floor(Math.random()*(i+1));
       [cards[i], cards[j]] = [cards[j], cards[i]];
@@ -782,10 +781,10 @@
   });
   onTap(memoRestart, memoStart);
   onTap(memoExit, ()=> closeModal(modalMem));
-  modalMem.addEventListener("pointerdown", (e)=>{ if(e.target===modalMem) closeModal(modalMem); });
+  modalMem.addEventListener("click", (e)=>{ if(e.target===modalMem) closeModal(modalMem); });
 
   /* =========================
-     GATO & RATÓN (tu idea)
+     GATO & RATÓN
      ========================= */
   const modalCM = document.getElementById("modalCatMouse");
   const cmBoard = document.getElementById("cmBoard");
@@ -911,7 +910,7 @@
   });
   onTap(cmRestart, cmReset);
   onTap(cmExit, ()=> closeModal(modalCM));
-  modalCM.addEventListener("pointerdown", (e)=>{ if(e.target===modalCM) closeModal(modalCM); });
+  modalCM.addEventListener("click", (e)=>{ if(e.target===modalCM) closeModal(modalCM); });
 
   onTap(cmUp,    ()=>cmPlayerMove(-1, 0));
   onTap(cmDown,  ()=>cmPlayerMove( 1, 0));
@@ -979,7 +978,6 @@
       hangState.status = "❌ Uy no…";
     }
 
-    // win?
     const all = new Set(hangState.word.split(""));
     let ok = true;
     for(const ch of all){
@@ -1015,7 +1013,7 @@
   });
   onTap(hangRestart, hangStart);
   onTap(hangExit, ()=> closeModal(modalHang));
-  modalHang.addEventListener("pointerdown", (e)=>{ if(e.target===modalHang) closeModal(modalHang); });
+  modalHang.addEventListener("click", (e)=>{ if(e.target===modalHang) closeModal(modalHang); });
 
   addEventListener("keydown", (e)=>{
     if(!modalHang.classList.contains("open")) return;
